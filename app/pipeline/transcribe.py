@@ -1,10 +1,10 @@
 import whisper
 
-print("loading model...")
+print("loading model....")
 
 model = whisper.load_model("base")
 
-print("transcribing video...")
+print("transcribing video....")
 
 result = model.transcribe("vid01.mp4")
 
