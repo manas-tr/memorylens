@@ -1,5 +1,7 @@
 import cv2
 import os
+import json
+
 
 video_path = "vid01.mp4"
 
@@ -7,34 +9,66 @@ faces_dir = "faces"
 
 output_path = "vid01_out.mp4"
 
+
 known_faces = []
+
+timeline = []
+
 
 for filename in os.listdir(faces_dir):
 
-    path = os.path.join(faces_dir, filename)
+    path = os.path.join(
+        faces_dir,
+        filename
+    )
 
     image = cv2.imread(path)
 
     if image is None:
         continue
 
-    image = cv2.resize(image, (100, 100))
+    image = cv2.resize(
+        image,
+        (100, 100)
+    )
 
     known_faces.append(image)
 
 
-print(f"loaded {len(known_faces)} faces")
+print(
+    f"loaded {len(known_faces)} faces"
+)
+
 
 face_detector = cv2.CascadeClassifier(
     cv2.data.haarcascades +
     "haarcascade_frontalface_default.xml"
 )
 
-video = cv2.VideoCapture(video_path)
 
-width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-fps = int(video.get(cv2.CAP_PROP_FPS))
+video = cv2.VideoCapture(
+    video_path
+)
+
+
+width = int(
+    video.get(
+        cv2.CAP_PROP_FRAME_WIDTH
+    )
+)
+
+height = int(
+    video.get(
+        cv2.CAP_PROP_FRAME_HEIGHT
+    )
+)
+
+fps = int(
+    video.get(
+        cv2.CAP_PROP_FPS
+    )
+)
+
 
 writer = cv2.VideoWriter(
     output_path,
@@ -43,6 +77,7 @@ writer = cv2.VideoWriter(
     (width, height)
 )
 
+
 while True:
 
     success, frame = video.read()
@@ -50,7 +85,10 @@ while True:
     if not success:
         break
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(
+        frame,
+        cv2.COLOR_BGR2GRAY
+    )
 
     faces = face_detector.detectMultiScale(
         gray,
@@ -59,6 +97,8 @@ while True:
         minSize=(180, 180)
     )
 
+    visible_people = set()
+
     for (x, y, w, h) in faces:
 
         face = frame[y:y+h, x:x+w]
@@ -66,12 +106,18 @@ while True:
         if face.size == 0:
             continue
 
-        small_face = cv2.resize(face, (100, 100))
+        small_face = cv2.resize(
+            face,
+            (100, 100)
+        )
 
         best_score = 999999
+
         best_id = None
 
-        for i, known_face in enumerate(known_faces):
+        for i, known_face in enumerate(
+            known_faces
+        ):
 
             difference = cv2.absdiff(
                 small_face,
@@ -81,8 +127,14 @@ while True:
             score = difference.mean()
 
             if score < best_score:
+
                 best_score = score
+
                 best_id = i
+
+        visible_people.add(
+            f"face_{best_id}"
+        )
 
         cv2.rectangle(
             frame,
@@ -102,10 +154,47 @@ while True:
             2
         )
 
+    current_time = round(
+        video.get(
+            cv2.CAP_PROP_POS_MSEC
+        ) / 1000,
+        1
+    )
+
+    timeline.append({
+        "time": current_time,
+        "visible": sorted(
+            list(visible_people)
+        )
+    })
+
     writer.write(frame)
 
 
 video.release()
+
 writer.release()
+
+
+os.makedirs(
+    "outputs",
+    exist_ok=True
+)
+
+with open(
+    "outputs/face_timeline.json",
+    "w"
+) as f:
+
+    json.dump(
+        timeline,
+        f,
+        indent=2
+    )
+
+
+print(
+    "saved outputs/face_timeline.json"
+)
 
 print("\nvideo saved!")

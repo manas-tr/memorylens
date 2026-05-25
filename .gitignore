@@ -3,4 +3,7 @@ __pycache__/
 venv/
 .env
 
-vid01_out.mp4
+*.mp4
+*.wav
+outputs/
+faces/
