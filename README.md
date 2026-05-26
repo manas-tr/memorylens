@@ -140,7 +140,7 @@ search: face_0
 
 ---
 
-## honest notes
+## notes
 
 goal wasn't perfect speaker identification. it's a coherent, searchable memory system built on top of raw audio/visual signals — modular, readable, and actually usable.
 
